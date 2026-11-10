@@ -1,0 +1,115 @@
+flowchart TD
+    start([Start or resume project]) --> restore[Validate index, workflow version, records and evidence]
+%% @aidflow-context restore
+%% Initialize missing .aidflow/ using `reference/workspace.md` (relative to aidflow.md). On resume, follow `reference/resume.md`;
+%% validate the saved node and call stack, then continue that exact pending step;
+%% the entry decision below is for runs without an active saved position.
+%% Do not replay Concept or choose a phase from artifact existence alone.
+%% @end-aidflow-context
+    restore --> resume{Valid saved position?}
+    resume -- Yes --> saved([Resume validated node and call stack])
+    resume -- Inconsistent --> blocked([Blocked: report evidence and required decision])
+    resume -- No active position --> conceptNeeded{Current Concept approval valid?}
+    conceptNeeded -- No --> concept[["Concept: concept.mmd"]]
+    conceptNeeded -- Yes --> featureIntake[["Feature intake: feature-intake.mmd"]]
+    concept -- Concept approved --> featureIntake
+    featureIntake -- Approved backlog ready --> releasePlanning[["Release planning: release-planning.mmd"]]
+    featureIntake -- Blocked --> blocked
+    featureIntake -- No approved features --> projectIdle([Project idle])
+    releasePlanning -- Scope approved --> design[["Design: design.mmd"]]
+    releasePlanning -- Planning deferred --> projectIdle
+    releasePlanning -- Release cancelled --> projectIdle
+    design -- Design approved --> select[Select next scoped feature needing implementation or verification]
+    design -- Release deferred or cancelled --> projectIdle
+    design -- Blocked --> blocked
+    select --> work{Pending work?}
+    work -- Implementation needed --> implementation[["Implementation: implementation.mmd"]]
+    work -- Feature verification needed --> verification[["Verification: verification.mmd"]]
+    work -- All scoped features verified: release mode --> verification
+%% @aidflow-context select
+%% On entry after Design approval, transition release design-approved -> implementing
+%% once current Definition/scope/Design approvals are valid. This status covers
+%% feature implementation, reuse assessment and feature verification, even when
+%% no code changes are needed. The AI records the transition from evidence here,
+%% not inside Implementation. Release Verification alone moves implementing -> verifying.
+%% Apply the responsible phase transition rules before selecting work.
+%% Use current evidence and dependency ordering; preserve unaffected feature work.
+%% Pass feature ID, new-work/rework mode and findings to Implementation. Pass
+%% feature/release mode and target IDs to Verification. Record caller and next
+%% action in the index. Never select a new feature while current rework is pending.
+
+%% Feature transitions owned by this phase:
+%% - `implementing` / `verifying` / `verified` -> `selected`: Scope or Design approval invalidated, with Definition unchanged; wait for renewed approvals before repair or reuse.
+%% - `verified` -> `released`: Containing release publication is confirmed and authorized.
+%% - Active status -> `blocked`: Unresolved conflict or external blocker; save prior status and required resolution.
+%% - `blocked` -> Saved prior status: Cause resolved and prior status invariants still hold; otherwise apply the relevant revision transition from that saved status.
+
+%% ## Subflow calls and outcomes
+
+%% Project owns feature selection and cross-phase repair routing. Verification takes
+%% `feature` or `release` mode and returns evidence-backed outcomes. Implementation
+%% receives a feature ID, `new-work` or `rework` mode and findings; it returns to its
+%% actual caller without changing target. Store these arguments with the call frame.
+%% For multiple affected features, record the pending target IDs and process them in
+%% dependency order. Invalidate affected verification before selection; preserve
+%% unaffected evidence with an impact rationale. Run release checks only when every
+%% scoped feature has current passing evidence.
+%% @end-aidflow-context
+    implementation -- Feature ready: feature mode --> verification
+    implementation -- Blocked --> blocked
+    verification -- Feature passed --> select
+    verification -- Implementation defect: same target and findings --> implementation
+    verification -- Design gap --> design
+    verification -- Definition change --> definition[["Definition: definition.mmd"]]
+    verification -- Blocked --> blocked
+    definition -- Revised and approved --> impact[Assess changed Definition impact and invalidate affected evidence]
+    definition -- Deferred or rejected --> releasePlanning
+    definition -- Blocked --> blocked
+    impact --> scopeImpact{Scope approval affected?}
+    scopeImpact -- Yes --> releasePlanning
+    scopeImpact -- No --> designImpact{Design approval affected?}
+    designImpact -- Yes --> design
+    designImpact -- No --> select
+%% @aidflow-context impact
+%% Read `reference/release-lifecycle.md` (relative to aidflow.md) and apply its release
+%% transition and change-impact rules. Preserve unaffected evidence only with an
+%% explicit impact rationale. If impact cannot be bounded, block.
+%% @end-aidflow-context
+    impact -- Unclear impact --> blocked
+    verification -- Release passed --> releaseApproval{Human authorizes publication?}
+    releaseApproval -- No decision --> awaitingPublication([Awaiting publication authorization])
+    releaseApproval -- Yes --> publish[Publish authorized release]
+    awaitingPublication -- Authorization received --> publish
+    awaitingPublication -- Additional checks: release mode --> verification
+    awaitingPublication -- Release cancelled --> projectIdle
+    publish --> published{Publication confirmed?}
+    published -- Yes --> releasePublished([Release published])
+    published -- Failed or unknown --> blocked
+%% @aidflow-context publish
+%% Revalidate scope/Design approvals, all required checks and explicit publication
+%% authorization against the exact release. Execute only permitted publication
+%% actions. Record published status only with success evidence. On failure or an
+%% uncertain result, inspect actual deployment state before any retry; never
+%% assume success or repeat a potentially completed side effect blindly.
+%% @end-aidflow-context
+    releasePublished --> anotherRelease{Plan another release now?}
+    anotherRelease -- Yes --> featureIntake
+    anotherRelease -- No --> projectIdle
+    projectIdle -- User requests new feature or release --> featureIntake
+
+    classDef boundary fill:#0b7fae,color:#ffffff,stroke:#0b7fae
+    classDef approval fill:#fff0e8,color:#633b2c,stroke:#c68162
+    class start,saved,blocked,projectIdle,awaitingPublication,releasePublished boundary
+    class releaseApproval,anotherRelease approval
+
+%% @aidflow-context releaseApproval
+%% Release transition `release-ready -> pending-publication-authorization`: Record check results and request publication authorization for current scope/design digests. Owner: AI requests; human decides.
+
+%% Release transition `pending-publication-authorization -> published`: Explicit authorization matches the current release digests; publication action is permitted and its success is confirmed. Owner: Human authorizes; AI executes only if permitted.
+
+%% Release transition Any active release -> `blocked`: An unresolved conflict, unavailable required evidence or external blocker prevents progress. Diagnosed failures use the impact node repair transitions. Owner: AI records; resolution may require human input.
+
+%% Release transition `blocked -> prior active status`: Cause resolved and prior invariants hold; otherwise apply the applicable repair transition from the saved status. Owner: AI based on evidence; human for approval transitions.
+
+%% Release transition Pre-publication status -> `deferred` / `cancelled`: User explicitly defers or cancels the release. Owner: Human.
+%% @end-aidflow-context

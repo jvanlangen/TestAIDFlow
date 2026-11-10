@@ -1,0 +1,26 @@
+flowchart TD
+    start([Define product purpose]) --> concept[Describe the problem, users and desired outcome]
+%% @aidflow-context concept
+%% Store only the stable product rationale in `.aidflow/concept.md`: the problem,
+%% intended users, desired outcome, boundaries and success measures. Do not list
+%% all features here or introduce technical implementation choices.
+
+%% Record path: `.aidflow/concept.md`.
+%% Record outline: Problem; Intended users; Desired outcome; Product boundaries and non-goals; Success measures; Decisions and evidence.
+%% Mutable statuses belong in the index. Example IDs and versions are placeholders.
+%% For a new project's first questions, read `reference/concept-example.md` (relative to aidflow.md).
+%% @end-aidflow-context
+    concept --> conceptApproval{Product concept approved?}
+    conceptApproval -- No: refine the problem or outcome --> concept
+    conceptApproval -- Yes: save `.aidflow/concept.md` --> conceptReady([Project concept established])
+%% @aidflow-context conceptApproval
+%% Save the draft before requesting approval.
+%% Obtain explicit human approval for the exact current file digest. Record the
+%% decision evidence in `.aidflow/index.md` according to
+%% `reference/approvals.md` (relative to aidflow.md). Revisit only when the product direction materially changes.
+%% @end-aidflow-context
+
+    classDef boundary fill:#0b7fae,color:#ffffff,stroke:#0b7fae
+    classDef approval fill:#fff0e8,color:#633b2c,stroke:#c68162
+    class start,conceptReady boundary
+    class conceptApproval approval
