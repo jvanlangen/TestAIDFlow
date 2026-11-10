@@ -30,18 +30,19 @@
 ## Current execution
 - status: waiting-human
 - phase: concept
-- node_id: concept
-- call_stack: project.conceptNeeded -> concept.start -> concept
+- node_id: conceptApproval
+- call_stack: project.conceptNeeded -> concept.start -> concept -> conceptApproval
 - call_arguments: none
 - pending_targets: none
 - feature_id: none
 - release_id: none
-- next_action: Await the project owner's answers to the pending Concept Question; then draft `.aidflow/concept.md` and request review and explicit approval.
+- next_action: Await the project owner's review and feedback on the Concept draft; then request explicit approval for its exact digest. Do not proceed to feature intake before approval.
 
 ## Records
 | ID | Type | Path | record_status | Current SHA-256 | Approved SHA-256 | Depends on | Tracker reference |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | R-0001 | Operational | `.aidflow/README.md` | none | `c12cdcc48b8c4a1d4bd061372035d05f0830de18c4015c049bedae065634fa9d` | none | none | none |
+| R-0002 | Concept | `.aidflow/concept.md` | draft | `e791b7121334b5c920a79a0e8caebd98e01de4f1daa0754db34af7648dc0eea7` | none | none | none |
 
 ## Features
 | Feature ID | Definition record ID | feature_status | Active release ID or none | Prior status if blocked | Event reference |
@@ -62,4 +63,4 @@
 ## Pending interaction
 | ID | Type | State | Target record/digest | Request and allowed outcomes | Response/evidence | Prior node/call stack | Next action or blocker |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| I-0001 | Question | awaiting-input | none | What should this project do, or what problem should it solve? Who has the problem and how do they handle it today? What outcome would make the project useful, and are there known boundaries or non-goals? Answer what is known; unresolved points remain open. | Awaiting response: [PR comment](https://github.com/jvanlangen/TestAIDFlow/pull/1#issuecomment-6762212712). | concept / project.conceptNeeded -> concept.start -> concept | Use the answers to clarify the Concept and draft `.aidflow/concept.md`; do not proceed to feature intake before Concept approval. |
+| I-0002 | Review | awaiting-review | `.aidflow/concept.md` / `e791b7121334b5c920a79a0e8caebd98e01de4f1daa0754db34af7648dc0eea7` | Review the Concept draft for accuracy; answer its open questions or request revisions. Review is not approval. | Answer received from [PR comment](https://github.com/jvanlangen/TestAIDFlow/pull/1#issuecomment-6762344984): “This is a test repo to test the complete AIDFlow method. Before we used just chats with AI but resulted in uncontrollable outcome. With this project I would like to test all stages of the development using AIDFlow.” | conceptApproval / project.conceptNeeded -> concept.start -> concept -> conceptApproval | After review and any revisions, request explicit approval for the exact Concept digest; do not enter feature intake until approved. |
