@@ -1,0 +1,54 @@
+flowchart TD
+    start([Define one feature]) --> clarify[Clarify problem, users and expected value]
+    clarify --> specify[Specify behavior, acceptance criteria, scope, non-goals and dependencies]
+%% @aidflow-context specify
+%% Write one independently deliverable feature Definition using the canonical
+%% record outline below. Make acceptance criteria observable and
+%% testable; record dependencies, constraints, non-goals and unresolved questions.
+
+%% Record path: `docs/aidflow/features/<feature-id>/definition.md`.
+%% Record outline: Proposal source; Problem and user outcome; In scope; Out of scope; Acceptance criteria; Dependencies and constraints; Open questions; Decisions and evidence.
+%% Mutable statuses belong in the index. Example IDs and versions are placeholders.
+%% @end-aidflow-context
+    specify --> review[Check boundaries, dependencies and observable acceptance criteria]
+    review --> quality{Definition consistent and sufficiently specified?}
+    quality -- No: resolvable from available evidence --> specify
+    quality -- Missing product decision --> awaitingInput[Ask focused question and wait for user input]
+    awaitingInput -- Sufficient answer received --> clarify
+    quality -- Technical obstacle or unresolved conflict --> blocked([Blocked: report obstacle and unblock condition])
+%% @aidflow-context awaitingInput
+%% Follow the Question protocol in `reference/interaction.md` (relative to aidflow.md).
+%% Save interaction awaiting-input, execution waiting-human, this node and the
+%% caller stack in `.aidflow/index.md`. Keep the Definition draft; do not return to
+%% the caller while waiting. Partial answers stay here. Once sufficient input
+%% arrives, return to clarify, revise and self-review before requesting approval.
+%% @end-aidflow-context
+    quality -- Yes: save reviewed draft --> definitionApproval{Feature definition approved by user?}
+%% @aidflow-context review
+%% Resolve omissions from existing approved context where possible. Ensure each
+%% acceptance criterion is observable, scope/non-goals agree, dependencies are
+%% explicit and no unresolved question prevents design. Never invent requirements
+%% or ask the human to perform this completeness check for the AI.
+%% @end-aidflow-context
+    definitionApproval -- No: ask questions or revise --> clarify
+    definitionApproval -- Yes: save feature definition --> definitionReady([Definition approved: return to caller])
+    definitionApproval -- Defer --> deferred([Deferred: keep out of release scope])
+    definitionApproval -- Reject --> rejected([Rejected: record decision in `.aidflow/index.md`])
+%% @aidflow-context definitionApproval
+%% Initial approval permits backlog entry; revised approval restores selected
+%% status only with valid scope membership, using Project impact rules. Bind
+%% approval to the exact Definition digest and record its evidence in `.aidflow/index.md`
+%% using `reference/approvals.md` (relative to aidflow.md). Defer/reject decisions are
+%% recorded but never included in a release scope.
+
+%% Feature transitions owned by this phase:
+%% - `clarifying` -> `backlog`: Human approves the exact Definition; no valid active release membership remains.
+%% - `clarifying` -> `selected`: Revised Definition approved; feature remains in a valid approved scope. Revalidate dependent Design before work.
+%% - `clarifying` -> `deferred` / `rejected`: Explicit human decision; unapproved Definition stays `draft`. Re-scope any containing release before continuing.
+%% - `backlog` / `selected` / `implementing` / `verifying` / `verified` -> `clarifying`: Material Definition change; invalidate its approval and assess dependent scope/Design/checks.
+%% @end-aidflow-context
+
+    classDef boundary fill:#0b7fae,color:#ffffff,stroke:#0b7fae
+    classDef approval fill:#fff0e8,color:#633b2c,stroke:#c68162
+    class start,definitionReady,deferred,rejected,blocked boundary
+    class definitionApproval approval

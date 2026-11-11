@@ -1,0 +1,29 @@
+flowchart TD
+    start([Implement caller-supplied scoped feature]) --> plan[Derive tasks from its Definition and release Design]
+%% @aidflow-context plan
+%% Caller supplies feature ID, new-work/rework mode and any findings. Keep that
+%% target throughout this call; do not select a different feature. Use its approved Definition and the currently approved
+%% release Design. Record the active feature/node and next action in `.aidflow/index.md`;
+%% create external tasks only when a tracker is configured and authorized.
+
+%% Feature transitions owned by this phase:
+%% - `selected` -> `implementing`: Current Definition, scope and Design approvals permit implementation.
+%% - `implementing` -> `verifying`: Tasks and focused checks pass against current inputs.
+%% - `verifying` / `verified` -> `implementing`: Evidence identifies required code repair; current approvals still permit implementation. Invalidate affected checks.
+%% @end-aidflow-context
+    plan --> implement[Implement the feature within the approved scope]
+%% @aidflow-context implement
+%% Work autonomously on routine implementation decisions within approved scope.
+%% Do not pause for routine coding choices. Pause for unclear/conflicting
+%% requirements, blockers, scope changes or unauthorized side effects.
+%% @end-aidflow-context
+    implement --> checks[Run focused checks and update `.aidflow/index.md`]
+    checks --> complete{Feature tasks complete and focused checks pass?}
+    complete -- No: continue or fix --> implement
+    complete -- Yes: return to caller --> implementationComplete([Feature implementation complete])
+    complete -- Blocked or scope unclear: stop and report --> blocked([Blocked: ask user])
+
+    classDef boundary fill:#0b7fae,color:#ffffff,stroke:#0b7fae
+    class start,implementationComplete,blocked boundary
+    classDef approval fill:#fff0e8,color:#633b2c,stroke:#c68162
+    class complete approval
