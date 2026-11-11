@@ -1,0 +1,43 @@
+flowchart TD
+    start([Feature proposed]) --> capture[Capture request from conversation or configured tracker]
+%% @aidflow-context capture
+%% Accept a feature proposal from the conversation or the configured GitHub/GitLab
+%% tracker. The tracker is optional. Do not start implementation or select a
+%% release during intake.
+
+%% Feature transitions owned by this phase:
+%% - `proposed` -> `clarifying`: AI captures and refines the proposal.
+%% - `backlog` -> `deferred`: Human defers; existing Definition approval remains valid.
+%% - `deferred` -> `backlog`: Human reopens and existing Definition approval is still valid.
+%% - `deferred` / `rejected` -> `proposed`: Human reopens with no valid Definition approval; preserve decisions and use `record_status: draft`.
+
+%% New features start proposed. Active states: proposed, clarifying, backlog,
+%% selected, implementing, verifying, verified. Deferred/rejected need explicit
+%% reopening. Released is terminal; later changes use a new feature ID.
+%% @end-aidflow-context
+    capture --> clarify[Clarify problem, users, outcome, scope and non-goals]
+%% @aidflow-context clarify
+%% Ask only for information needed to write a useful Definition: affected users,
+%% problem, expected outcome/value, scope and non-goals. Do not infer missing
+%% requirements. Keep this proposal under one stable feature ID.
+%% @end-aidflow-context
+    clarify --> ready{Enough information to prepare a Definition draft?}
+    ready -- No: ask and refine --> clarify
+    ready -- Yes: create or update draft --> draft[Draft feature Definition in `docs/aidflow/features/F-0001/definition.md`]
+    draft --> definition[["Definition: definition.mmd"]]
+    definition -- Blocked --> blocked([Blocked: report obstacle and unblock condition])
+    definition -- Approved: add to `.aidflow/index.md` backlog --> backlog[Feature in approved backlog]
+    definition -- Deferred: update `.aidflow/index.md` --> deferred[Feature deferred]
+    definition -- Rejected: record decision --> rejected[Feature rejected]
+    backlog --> another{Process another proposal now?}
+    deferred --> another
+    rejected --> another
+    another -- Yes --> capture
+    another -- No --> anyApproved{Any approved features in backlog?}
+    anyApproved -- Yes --> intakeReady([Approved backlog ready for release planning])
+    anyApproved -- No --> noApproved([No approved feature: pause project])
+
+    classDef boundary fill:#0b7fae,color:#ffffff,stroke:#0b7fae
+    class start,intakeReady,noApproved boundary
+    classDef approval fill:#fff0e8,color:#633b2c,stroke:#c68162
+    class ready,another,anyApproved approval

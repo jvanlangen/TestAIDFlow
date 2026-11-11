@@ -1,0 +1,11 @@
+.git
+.aidflow
+.github
+docs
+tests
+.env
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/TestResults
