@@ -382,7 +382,14 @@ function App() {
                         </form>
                       ) : <><h3>{ingredient.name}</h3><span className="unit-tag">tracked in {ingredient.baseUnit}</span></>}
                     </div>
-                    {renameIngredientId !== ingredient.id && <button className="text-button edit-link" type="button" onClick={() => { setRenameIngredientId(ingredient.id); setRenameIngredientText(ingredient.name) }}>Rename</button>}
+                    {renameIngredientId !== ingredient.id && <>
+                      <button className="text-button edit-link" type="button" onClick={() => { setRenameIngredientId(ingredient.id); setRenameIngredientText(ingredient.name) }}>Rename</button>
+                      <button className="text-button danger-text" type="button" aria-label={`Delete ${ingredient.name}`} onClick={() => {
+                        if (window.confirm(`Delete ${ingredient.name}? Package sizes and recipe equivalents will also be deleted. Ingredients used in a meal must first be removed from that meal.`)) {
+                          void run(async () => { await request(`/api/ingredients/${ingredient.id}`, { method: 'DELETE' }); await refresh() }, 'Ingredient deleted.')
+                        }
+                      }}>Delete</button>
+                    </>}
                   </div>
                   <div className="ingredient-details">
                     <div><span className="detail-label">Package sizes</span>
