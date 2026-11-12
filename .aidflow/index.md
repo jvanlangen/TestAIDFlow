@@ -36,7 +36,7 @@
 - pending_targets: none
 - feature_id: F-0001
 - release_id: v1.0
-- next_action: Continue F-0001 implementation and focused checks; desktop/mobile browser validation was interrupted, and implementation and release verification are not yet complete.
+- next_action: Continue remaining F-0001 implementation; responsive browser validation and release verification are not yet complete.
 
 ## Records
 | ID | Type | Path | record_status | Current SHA-256 | Approved SHA-256 | Depends on | Tracker reference |
@@ -84,3 +84,5 @@
 ## Verification evidence
 | Feature/release | Check | Result | Evidence path/reference | Digest | Current/stale and reason |
 | --- | --- | --- | --- | --- | --- |
+| F-0001 | API unit tests and PostgreSQL-backed package-measure flow (3 × 18 g sachets; 108 g needs two boxes) | passed (10/10 tests; API exercise passed) | `dotnet test tests/Api.Tests/Api.Tests.csproj`; temporary PostgreSQL-backed API exercise | `tests/Api.Tests/UnitMathTests.cs`: `8559f826232ecba242e743974e04bd0afc51cf531ab0af8e7e086961095b372e` | current; package equivalent and minimum package count validated |
+| F-0001 | Frontend production build, lint and browser display of package measure option | passed | `npm run build --prefix src/Web`; `npm run lint --prefix src/Web`; browser at `http://127.0.0.1:5173` | `src/Web/src/App.tsx`: `3d6a5442bde390ba2476e20d9295ff5e40c847fb738d7497c3310ba898e281a0` | current; package measure selector and display validated |

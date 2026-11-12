@@ -2,7 +2,14 @@ import { useEffect, useState, type FormEvent } from 'react'
 import './App.css'
 
 type Unit = 'g' | 'kg' | 'ml' | 'l' | 'pieces'
-type PackageSize = { id: string; quantity: string; unit: Unit; label: string }
+type PackageSize = {
+  id: string
+  quantity: string
+  unit: Unit
+  measureName: string | null
+  equivalentQuantity: string | null
+  label: string
+}
 type MeasureEquivalent = {
   recipeMeasureId: string
   measureName: string
@@ -114,7 +121,7 @@ function App() {
   const [measureName, setMeasureName] = useState('')
   const [packageIngredientId, setPackageIngredientId] = useState('')
   const [packageQuantity, setPackageQuantity] = useState('')
-  const [packageUnit, setPackageUnit] = useState<Unit>('g')
+  const [packageUnit, setPackageUnit] = useState('unit:g')
   const [equivalentIngredientId, setEquivalentIngredientId] = useState('')
   const [equivalentMeasureId, setEquivalentMeasureId] = useState('')
   const [equivalentQuantity, setEquivalentQuantity] = useState('')
@@ -304,19 +311,32 @@ function App() {
             </div>
 
             <form className="panel inline-form" onSubmit={(event) => submit(event, async () => {
-              await request(`/api/ingredients/${packageIngredientId}/packages`, { method: 'POST', body: JSON.stringify({ quantity: packageQuantity, unit: packageUnit }) })
+              const isMeasure = packageUnit.startsWith('measure:')
+              await request(`/api/ingredients/${packageIngredientId}/packages`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  quantity: packageQuantity,
+                  unit: isMeasure ? null : packageUnit.slice('unit:'.length),
+                  recipeMeasureId: isMeasure ? packageUnit.slice('measure:'.length) : null,
+                }),
+              })
               setPackageQuantity('')
               await refresh()
             }, 'Package size added.')}>
-              <div><h3>Add a package size</h3><p className="form-hint">Package sizes are saved per ingredient.</p></div>
+              <div><h3>Add a package size</h3><p className="form-hint">Use a defined recipe measure for packages like 3 sachets at 18 g each.</p></div>
               <label>Ingredient<select required value={packageIngredientId} onChange={(event) => {
                 const ingredient = data.ingredients.find((item) => item.id === event.target.value)
                 setPackageIngredientId(event.target.value)
-                setPackageUnit(ingredient?.baseUnit ?? 'g')
+                setPackageUnit(`unit:${ingredient?.baseUnit ?? 'g'}`)
               }}><option value="">Choose…</option>{data.ingredients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
               <label>Quantity<input required inputMode="decimal" value={packageQuantity} onChange={(event) => setPackageQuantity(event.target.value)} placeholder="e.g. 3" /></label>
-              <label>Unit<select value={packageUnit} onChange={(event) => setPackageUnit(event.target.value as Unit)}>
-                {compatibleUnits(data.ingredients.find((item) => item.id === packageIngredientId)?.baseUnit ?? packageUnit).map((unit) => <option key={unit}>{unit}</option>)}
+              <label>Unit<select value={packageUnit} onChange={(event) => setPackageUnit(event.target.value)}>
+                {compatibleUnits(data.ingredients.find((item) => item.id === packageIngredientId)?.baseUnit ?? 'g').map((unit) => <option key={unit} value={`unit:${unit}`}>{unit}</option>)}
+                {data.ingredients.find((item) => item.id === packageIngredientId)?.measureEquivalents.map((equivalent) => (
+                  <option key={equivalent.recipeMeasureId} value={`measure:${equivalent.recipeMeasureId}`}>
+                    {equivalent.measureName} ({equivalent.quantity} {equivalent.unit} each)
+                  </option>
+                ))}
               </select></label>
               <button className="button secondary" type="submit" disabled={!data.ingredients.length}>Save size</button>
             </form>

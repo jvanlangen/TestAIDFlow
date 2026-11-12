@@ -29,7 +29,8 @@ public sealed class PackageSize
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid IngredientId { get; set; }
     public decimal Quantity { get; set; }
-    public required string Unit { get; set; }
+    public string? Unit { get; set; }
+    public Guid? RecipeMeasureId { get; set; }
 }
 
 public sealed class RecipeMeasure
@@ -73,9 +74,16 @@ public sealed class GroceryList
     public required string ItemsJson { get; set; }
 }
 
-public sealed record PackageSizeDto(Guid Id, decimal Quantity, string Unit)
+public sealed record PackageSizeDto(
+    Guid Id,
+    decimal Quantity,
+    string? Unit,
+    string? MeasureName = null,
+    decimal? EquivalentQuantity = null)
 {
-    public string Label => $"{Quantity.ToString("G29", CultureInfo.InvariantCulture)} {Unit}";
+    public string Label => MeasureName is null
+        ? $"{Quantity.ToString("G29", CultureInfo.InvariantCulture)} {Unit}"
+        : $"{Quantity.ToString("G29", CultureInfo.InvariantCulture)} {MeasureName} ({(Quantity * EquivalentQuantity!.Value).ToString("G29", CultureInfo.InvariantCulture)} {Unit})";
 }
 
 public sealed record MeasureEquivalentDto(Guid RecipeMeasureId, string MeasureName, decimal Quantity, string Unit);
@@ -130,7 +138,7 @@ public sealed record AppStateDto(
 
 public sealed record CreateIngredientRequest(string Name, string BaseUnit);
 public sealed record RenameRequest(string Name);
-public sealed record CreatePackageSizeRequest(decimal Quantity, string Unit);
+public sealed record CreatePackageSizeRequest(decimal Quantity, string? Unit, Guid? RecipeMeasureId = null);
 public sealed record CreateMeasureRequest(string Name);
 public sealed record MeasureEquivalentRequest(decimal Quantity, string Unit);
 public sealed record MealIngredientRequest(

@@ -157,17 +157,21 @@ namespace Api.Migrations
                     b.Property<Guid>("IngredientId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("RecipeMeasureId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("Quantity")
                         .HasColumnType("numeric");
 
                     b.Property<string>("Unit")
-                        .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("character varying(12)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("IngredientId");
+
+                    b.HasIndex("RecipeMeasureId");
 
                     b.ToTable("PackageSizes");
                 });
@@ -233,6 +237,11 @@ namespace Api.Migrations
                         .HasForeignKey("IngredientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Api.RecipeMeasure", null)
+                        .WithMany()
+                        .HasForeignKey("RecipeMeasureId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Api.Ingredient", b =>

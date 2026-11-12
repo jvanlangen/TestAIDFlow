@@ -26,7 +26,10 @@ public static class UnitMath
             .Select(option => new
             {
                 Option = option,
-                Quantity = Convert(option.Quantity, option.Unit, targetUnit)
+                Quantity = Convert(
+                    option.Quantity * (option.EquivalentQuantity ?? 1m),
+                    option.Unit ?? throw new ArgumentException("A package size must have an underlying unit."),
+                    targetUnit)
             })
             .Where(x => x.Quantity > 0)
             .OrderByDescending(x => x.Quantity)
