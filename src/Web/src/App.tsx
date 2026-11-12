@@ -366,7 +366,11 @@ function App() {
                   </div>
                   <div className="ingredient-details">
                     <div><span className="detail-label">Package sizes</span>
-                      {ingredient.packageSizes.length ? <div className="chips">{ingredient.packageSizes.map((size) => <span className="chip" key={size.id}>{size.label}<button type="button" aria-label={`Remove ${size.label} package size for ${ingredient.name}`} onClick={() => void run(async () => { await request(`/api/ingredients/${ingredient.id}/packages/${size.id}`, { method: 'DELETE' }); await refresh() }, 'Package size removed.')}>×</button></span>)}</div> : <span className="muted">None added</span>}
+                      {ingredient.packageSizes.length ? <div className="chips">{ingredient.packageSizes.map((size) => <span className="chip" key={size.id}>{size.label}<button type="button" aria-label={`Remove ${size.label} package size for ${ingredient.name}`} onClick={() => {
+                        if (window.confirm(`Delete the ${size.label} package size for ${ingredient.name}?`)) {
+                          void run(async () => { await request(`/api/ingredients/${ingredient.id}/packages/${size.id}`, { method: 'DELETE' }); await refresh() }, 'Package size removed.')
+                        }
+                      }}>×</button></span>)}</div> : <span className="muted">None added</span>}
                     </div>
                     <div><span className="detail-label">Recipe equivalents</span>
                       {ingredient.measureEquivalents.length ? <div className="chips">{ingredient.measureEquivalents.map((equivalent) => <span className="chip soft" key={equivalent.recipeMeasureId}>{equivalent.measureName} = {equivalent.quantity} {equivalent.unit}</span>)}</div> : <span className="muted">None defined</span>}
