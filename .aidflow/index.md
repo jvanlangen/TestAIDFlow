@@ -36,7 +36,7 @@
 - pending_targets: none
 - feature_id: F-0001
 - release_id: v1.0
-- next_action: Continue F-0001 implementation and focused checks; desktop/mobile browser validation was interrupted, and implementation and release verification are not yet complete.
+- next_action: Continue remaining F-0001 implementation and desktop/mobile browser validation; ingredient deletion is implemented and focused checks pass, but implementation and release verification are not yet complete.
 
 ## Records
 | ID | Type | Path | record_status | Current SHA-256 | Approved SHA-256 | Depends on | Tracker reference |
@@ -84,3 +84,4 @@
 ## Verification evidence
 | Feature/release | Check | Result | Evidence path/reference | Digest | Current/stale and reason |
 | --- | --- | --- | --- | --- | --- |
+| F-0001 | Ingredient deletion UI; frontend lint/build; API unit tests | Pass: `npm run lint --prefix src/Web`, `npm run build --prefix src/Web`, and `dotnet test tests/Api.Tests/Api.Tests.csproj` (9 passed). Browser interaction was not exercised because no PostgreSQL service is running in this environment. | `src/Web/src/App.tsx` | `587dda9b5e53568ea80d894ffa5e68c50cd894b16fc7586311cf5bbeace1f29b` | Current for the ingredient deletion UI change; full feature implementation and release verification remain incomplete. |
