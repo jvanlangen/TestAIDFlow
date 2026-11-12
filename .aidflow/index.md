@@ -28,7 +28,7 @@
 - project_or_board: none
 
 ## Current execution
-- status: ready
+- status: waiting-human
 - phase: implementation
 - node_id: implement
 - call_stack: Project.select -> Project.work -> Implementation.implement
@@ -36,7 +36,12 @@
 - pending_targets: none
 - feature_id: F-0001
 - release_id: v1.0
-- next_action: Continue remaining F-0001 implementation and desktop/mobile browser validation; ingredient deletion is implemented and focused checks pass, but implementation and release verification are not yet complete.
+- next_action: Await the user's decision on whether product/stock tracking is a material expansion of F-0001/v1.0 or a separate feature/release; do not continue implementation until scope is classified.
+
+## Pending interaction
+| ID | Type | State | Target record/digest | Request and allowed outcomes | Response/evidence | Prior node/call stack | Next action or blocker |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| I-0017 | Question | awaiting-input | definition-F-0001 / `docs/aidflow/features/F-0001/definition.md` / `900f82d15dd5b05d9177f20ef32cc28d0f7dfe5441e1235f1581addf455909e0`; design-v1.0 / `docs/aidflow/releases/v1.0/design.md` / `73354680e2e2750015f384abe5737e46781f86401fd4d95c27d9bef6da4bc977` | Should products, nested package sizes and a distinct stock checklist/grocery list be added as a material expansion of F-0001/v1.0, or handled as a separate feature/release? | Pending | Implementation.implement / Project.select -> Project.work -> Implementation.implement; F-0001, v1.0, new-work | Await user scope classification; then follow the appropriate AIDFlow Definition/Design route before coding. |
 
 ## Records
 | ID | Type | Path | record_status | Current SHA-256 | Approved SHA-256 | Depends on | Tracker reference |
