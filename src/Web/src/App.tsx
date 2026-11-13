@@ -435,7 +435,11 @@ function App() {
                           <option value="">Choose…</option>{data.recipeMeasures.map((measure) => <option key={measure.id} value={measure.id} disabled={!validMeasures.some((item) => item.id === measure.id)}>{measure.name}{!validMeasures.some((item) => item.id === measure.id) ? ' — define equivalent first' : ''}</option>)}
                         </select></label>
                       )}
-                      <button className="remove-row" type="button" aria-label="Remove ingredient row" onClick={() => setMealLines((lines) => lines.filter((item) => item.key !== line.key))} disabled={mealLines.length === 1}>×</button>
+                      <button className="remove-row" type="button" aria-label="Remove ingredient row" onClick={() => {
+                        if (window.confirm('Remove this ingredient from the meal?')) {
+                          setMealLines((lines) => lines.filter((item) => item.key !== line.key))
+                        }
+                      }} disabled={mealLines.length === 1}>×</button>
                     </div>
                   )
                 })}
@@ -446,7 +450,11 @@ function App() {
                 {data.meals.length === 0 && <div className="empty-state"><span aria-hidden="true">◌</span><p>Your first saved meal will show up here.</p></div>}
                 {data.meals.map((meal) => (
                   <article className="meal-card" key={meal.id}>
-                    <div className="meal-card-top"><div><span className="eyebrow">MEAL</span><h3>{meal.name}</h3></div><div className="card-actions"><button className="text-button" type="button" onClick={() => startMealEdit(meal)}>Edit</button><button className="text-button danger-text" type="button" onClick={() => void run(async () => { await request(`/api/meals/${meal.id}`, { method: 'DELETE' }); setMealPeople((current) => { const next = { ...current }; delete next[meal.id]; return next }); await refresh() }, 'Meal removed.')}>Delete</button></div></div>
+                    <div className="meal-card-top"><div><span className="eyebrow">MEAL</span><h3>{meal.name}</h3></div><div className="card-actions"><button className="text-button" type="button" onClick={() => startMealEdit(meal)}>Edit</button><button className="text-button danger-text" type="button" onClick={() => {
+                      if (window.confirm(`Delete ${meal.name}?`)) {
+                        void run(async () => { await request(`/api/meals/${meal.id}`, { method: 'DELETE' }); setMealPeople((current) => { const next = { ...current }; delete next[meal.id]; return next }); await refresh() }, 'Meal removed.')
+                      }
+                    }}>Delete</button></div></div>
                     <ul className="meal-ingredients">{meal.ingredients.map((line) => <li key={line.id}><span>{line.ingredientName}</span><span>{line.quantity} {line.recipeMeasureId ? line.measureName : line.unit}</span></li>)}</ul>
                     <label className="people-picker">People for grocery list<input min="0" step="1" type="number" inputMode="numeric" value={mealPeople[meal.id] ?? ''} onChange={(event) => setMealPeople((current) => ({ ...current, [meal.id]: event.target.value }))} placeholder="0" /></label>
                   </article>
@@ -537,7 +545,11 @@ function App() {
                   <article className="saved-list-card" key={list.id}>
                     <div className="saved-list-heading">
                       <div><p className="eyebrow">{new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(list.createdAt))}</p><h3>{list.name}</h3></div>
-                      <button className="text-button danger-text" type="button" onClick={() => void run(async () => { await request(`/api/grocery-lists/${list.id}`, { method: 'DELETE' }); await refresh() }, 'Grocery list deleted.')}>Delete list</button>
+                      <button className="text-button danger-text" type="button" onClick={() => {
+                        if (window.confirm(`Delete the saved grocery list "${list.name}"?`)) {
+                          void run(async () => { await request(`/api/grocery-lists/${list.id}`, { method: 'DELETE' }); await refresh() }, 'Grocery list deleted.')
+                        }
+                      }}>Delete list</button>
                     </div>
                     <p className="meal-summary">{list.selections.map((selection) => `${selection.mealName} · ${selection.peopleCount} ${selection.peopleCount === 1 ? 'person' : 'people'}`).join('  /  ')}</p>
                     {draftItems.length === 0 ? <p className="inline-hint">This list has no items.</p> : (
@@ -549,7 +561,11 @@ function App() {
                             <div className="grocery-item" key={item.id}>
                               <div><strong>{item.ingredientName}</strong><span className="required-amount">Needed: {draft.quantity} {item.unit}</span></div>
                               <label className="amount-edit">Amount<input inputMode="decimal" value={draft.quantity} onChange={(event) => setListDrafts((current) => ({ ...current, [list.id]: draftItems.map((entry) => entry.id === draft.id ? { ...entry, quantity: event.target.value } : entry) }))} /></label>
-                              <button className="text-button danger-text" type="button" onClick={() => setListDrafts((current) => ({ ...current, [list.id]: draftItems.filter((entry) => entry.id !== draft.id) }))}>Remove</button>
+                              <button className="text-button danger-text" type="button" onClick={() => {
+                                if (window.confirm(`Remove ${item.ingredientName} from the saved list?`)) {
+                                  setListDrafts((current) => ({ ...current, [list.id]: draftItems.filter((entry) => entry.id !== draft.id) }))
+                                }
+                              }}>Remove</button>
                               <div className="package-results">
                                 {item.packageCombinations.length ? item.packageCombinations.map((combination, index) => <span className="package-result" key={`${item.id}-${index}`}>{combination.packages.map((pkg) => `${pkg.count} × ${pkg.label}`).join(' + ')}</span>) : <span className="muted">{item.packageOptions.length ? 'No selected package combination' : 'No package sizes selected'}</span>}
                               </div>
