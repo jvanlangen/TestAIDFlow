@@ -24,9 +24,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         modelBuilder.Entity<PackageSize>(entity =>
         {
             entity.Property(x => x.Quantity).HasColumnType("numeric").IsRequired();
-            entity.Property(x => x.Unit).HasMaxLength(12).IsRequired();
+            entity.Property(x => x.Unit).HasMaxLength(12);
             entity.HasOne<Ingredient>().WithMany(x => x.PackageSizes)
                 .HasForeignKey(x => x.IngredientId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<RecipeMeasure>().WithMany()
+                .HasForeignKey(x => x.RecipeMeasureId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<RecipeMeasure>(entity =>

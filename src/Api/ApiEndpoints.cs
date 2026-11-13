@@ -120,7 +120,37 @@ public static class ApiEndpoints
             return Results.NotFound();
         if (request.Quantity <= 0)
             return Invalid("quantity", "Package quantity must be greater than zero.");
-        if (!IsCompatible(ingredient.BaseUnit, request.Unit))
+        if (request.RecipeMeasureId is Guid measureId)
+        {
+            if (request.Unit is not null)
+                return Invalid("unit", "Choose either an underlying unit or a recipe measure.");
+            var measure = await db.RecipeMeasures.FindAsync([measureId], token);
+            if (measure is null)
+                return Invalid("recipeMeasureId", "Choose an existing recipe measure.");
+            var equivalent = await db.IngredientMeasureEquivalents
+                .FindAsync([id, measureId], token);
+            if (equivalent is null)
+                return Invalid("recipeMeasureId", $"Define the {measure.Name} equivalent for {ingredient.Name} first.");
+
+            var measuredPackage = new PackageSize
+            {
+                IngredientId = id,
+                Quantity = request.Quantity,
+                RecipeMeasureId = measureId
+            };
+            db.PackageSizes.Add(measuredPackage);
+            await db.SaveChangesAsync(token);
+            return Results.Created(
+                $"/api/ingredients/{id}/packages/{measuredPackage.Id}",
+                new PackageSizeDto(
+                    measuredPackage.Id,
+                    measuredPackage.Quantity,
+                    equivalent.Unit,
+                    measure.Name,
+                    equivalent.Quantity));
+        }
+
+        if (request.Unit is null || !IsCompatible(ingredient.BaseUnit, request.Unit))
             return Invalid("unit", $"Choose a unit compatible with {ingredient.Name} ({ingredient.BaseUnit}).");
 
         var packageSize = new PackageSize
@@ -374,8 +404,10 @@ public static class ApiEndpoints
         if (packageSizes.Any(x => !totals.ContainsKey(x.IngredientId)))
             return Invalid("selectedPackageSizeIds", "Choose package sizes only for ingredients in the selected meals.");
 
+        var packageDtos = await ToPackageSizeDtosAsync(packageSizes, db, token);
+        var packageDtosById = packageDtos.ToDictionary(x => x.Id);
         var selectedByIngredient = packageSizes.GroupBy(x => x.IngredientId)
-            .ToDictionary(x => x.Key, x => x.Select(p => new PackageSizeDto(p.Id, p.Quantity, p.Unit)).ToArray());
+            .ToDictionary(x => x.Key, x => x.Select(p => packageDtosById[p.Id]).ToArray());
         var items = totals
             .OrderBy(x => ingredients[x.Key].Name)
             .Select(x =>
@@ -464,7 +496,7 @@ public static class ApiEndpoints
         if (packages.Count != selectedIds.Length)
             return Invalid("selectedPackageSizeIds", "Choose package sizes belonging to this ingredient.");
 
-        var options = packages.Select(x => new PackageSizeDto(x.Id, x.Quantity, x.Unit)).ToArray();
+        var options = await ToPackageSizeDtosAsync(packages, db, token);
         var item = new GroceryItemDto(
             Guid.NewGuid(),
             ingredient.Id,
@@ -489,17 +521,69 @@ public static class ApiEndpoints
         return Results.NoContent();
     }
 
-    private static IngredientDto ToDto(Ingredient ingredient, IReadOnlyDictionary<Guid, string> measureNames) =>
-        new(
+    private static IngredientDto ToDto(Ingredient ingredient, IReadOnlyDictionary<Guid, string> measureNames)
+    {
+        var packageSizes = ingredient.PackageSizes
+            .Select(package => ToPackageSizeDto(package, ingredient, measureNames))
+            .OrderBy(package => UnitMath.Convert(
+                package.Quantity * (package.EquivalentQuantity ?? 1m),
+                package.Unit ?? throw new InvalidOperationException("A package size has no underlying unit."),
+                ingredient.BaseUnit))
+            .ToArray();
+        return new(
             ingredient.Id,
             ingredient.Name,
             ingredient.BaseUnit,
-            ingredient.PackageSizes.OrderBy(x => x.Quantity)
-                .Select(x => new PackageSizeDto(x.Id, x.Quantity, x.Unit)).ToArray(),
+            packageSizes,
             ingredient.MeasureEquivalents
                 .Where(x => measureNames.ContainsKey(x.RecipeMeasureId))
                 .Select(x => new MeasureEquivalentDto(
                     x.RecipeMeasureId, measureNames[x.RecipeMeasureId], x.Quantity, x.Unit)).ToArray());
+    }
+
+    private static PackageSizeDto ToPackageSizeDto(
+        PackageSize package,
+        Ingredient ingredient,
+        IReadOnlyDictionary<Guid, string> measureNames)
+    {
+        if (package.RecipeMeasureId is not Guid measureId)
+            return new(
+                package.Id,
+                package.Quantity,
+                package.Unit ?? throw new InvalidOperationException("A package size has no unit."));
+
+        if (!measureNames.TryGetValue(measureId, out var measureName))
+            throw new InvalidOperationException("A package size references an unknown recipe measure.");
+        var equivalent = ingredient.MeasureEquivalents.SingleOrDefault(x => x.RecipeMeasureId == measureId)
+            ?? throw new InvalidOperationException("A package size has no ingredient-specific measure equivalent.");
+        return new(package.Id, package.Quantity, equivalent.Unit, measureName, equivalent.Quantity);
+    }
+
+    private static async Task<PackageSizeDto[]> ToPackageSizeDtosAsync(
+        IReadOnlyCollection<PackageSize> packages,
+        AppDbContext db,
+        CancellationToken token)
+    {
+        var ingredientIds = packages.Select(x => x.IngredientId).Distinct().ToArray();
+        if (ingredientIds.Length == 0)
+            return [];
+        var measureIds = packages
+            .Where(x => x.RecipeMeasureId.HasValue)
+            .Select(x => x.RecipeMeasureId!.Value)
+            .Distinct()
+            .ToArray();
+        var packageIngredients = await db.Ingredients
+            .Where(x => ingredientIds.Contains(x.Id))
+            .Include(x => x.MeasureEquivalents)
+            .ToDictionaryAsync(x => x.Id, token);
+        var measureNames = await db.RecipeMeasures
+            .Where(x => measureIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => x.Name, token);
+        return packages.Select(package => ToPackageSizeDto(
+            package,
+            packageIngredients[package.IngredientId],
+            measureNames)).ToArray();
+    }
 
     private static MealDto ToDto(
         Meal meal,

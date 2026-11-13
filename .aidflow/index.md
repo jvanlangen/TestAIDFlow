@@ -36,7 +36,7 @@
 - pending_targets: none
 - feature_id: F-0001
 - release_id: v1.0
-- next_action: Continue remaining F-0001 implementation and desktop/mobile browser validation; ingredient deletion is implemented and focused checks pass, but implementation and release verification are not yet complete.
+- next_action: Continue remaining F-0001 implementation; ingredient deletion and package-measure changes are implemented, but responsive browser validation and release verification are not yet complete.
 
 ## Records
 | ID | Type | Path | record_status | Current SHA-256 | Approved SHA-256 | Depends on | Tracker reference |
@@ -84,4 +84,5 @@
 ## Verification evidence
 | Feature/release | Check | Result | Evidence path/reference | Digest | Current/stale and reason |
 | --- | --- | --- | --- | --- | --- |
-| F-0001 | Ingredient deletion UI; frontend lint/build; API unit tests | Pass: `npm run lint --prefix src/Web`, `npm run build --prefix src/Web`, and `dotnet test tests/Api.Tests/Api.Tests.csproj` (9 passed). Browser interaction was not exercised because no PostgreSQL service is running in this environment. | `src/Web/src/App.tsx` | `587dda9b5e53568ea80d894ffa5e68c50cd894b16fc7586311cf5bbeace1f29b` | Current for the ingredient deletion UI change; full feature implementation and release verification remain incomplete. |
+| F-0001 | API unit tests and PostgreSQL-backed package-measure flow (3 × 18 g sachets; 108 g needs two boxes) | passed (10/10 tests; API exercise passed) | `dotnet test tests/Api.Tests/Api.Tests.csproj`; temporary PostgreSQL-backed API exercise | `tests/Api.Tests/UnitMathTests.cs`: `8559f826232ecba242e743974e04bd0afc51cf531ab0af8e7e086961095b372e` | current; package equivalent and minimum package count validated |
+| F-0001 | Ingredient deletion UI, package-measure selector, frontend lint/build, API unit tests | Passed: frontend lint/build; API tests (10 passed). Previous browser exercise validated the package-measure selector before merging the ingredient-deletion UI. | `src/Web/src/App.tsx`; `tests/Api.Tests/UnitMathTests.cs` | `src/Web/src/App.tsx`: `c90daf24dbd200474c9b856b28c0abecaef2ffd6d41bfc4bb1b0d1ae5625ceee`; `tests/Api.Tests/UnitMathTests.cs`: `8559f826232ecba242e743974e04bd0afc51cf531ab0af8e7e086961095b372e` | Current for API and frontend build/lint checks; browser verification predates the merge; responsive browser validation and release verification remain incomplete. |

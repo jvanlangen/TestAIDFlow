@@ -37,6 +37,18 @@ public sealed class UnitMathTests
     }
 
     [Fact]
+    public void Package_measure_equivalents_calculate_total_content_and_preserve_the_package_label()
+    {
+        var package = new PackageSizeDto(Guid.NewGuid(), 3, "g", "sachets", 18);
+
+        var combinations = UnitMath.MinimumPackageCombinations(108, "g", [package]);
+
+        Assert.Equal("3 sachets (54 g)", package.Label);
+        Assert.Equal(2, Assert.Single(combinations).Packages.Single().Count);
+        Assert.Equal(package.Label, Assert.Single(combinations).Packages.Single().Label);
+    }
+
+    [Fact]
     public void Returns_every_minimum_count_combination_that_covers_the_amount()
     {
         var options = new[]
